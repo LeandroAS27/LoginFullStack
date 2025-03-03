@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 const Profile = () => {
     const [user, setUser] = useState(null);
+    const [usuarios, setUsuarios] = useState([]);
     const router = useRouter();
     const [newNome, setNewNome] = useState('')
     const [newSobrenome, setNewSobrenome] = useState('')
@@ -12,6 +13,7 @@ const Profile = () => {
     const [newEmail, setNewEmail] = useState('')
     const [newSenha, setNewSenha] = useState('')
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const newData = {
         nome: newNome || user?.user?.nome,
@@ -21,6 +23,7 @@ const Profile = () => {
         senha: newSenha || user?.user?.senha,
     }
 
+    
     useEffect(() => {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
@@ -29,6 +32,7 @@ const Profile = () => {
             router.push('/');
         }else if(storedUser){
             setUser(JSON.parse(storedUser))
+            setLoading(false);
         }else{
             fetch('http://localhost:5000/perfil',{
                 headers: {
@@ -40,14 +44,46 @@ const Profile = () => {
                 if(data.user){
                     setUser(data.user)
                     localStorage.setItem("user", JSON.stringify(data.user))
+                    setLoading(false);
                 }else{
-                        router.push('/');
-                    }
-                })
-                .catch(() => router.push('/'));
-            }
+                    router.push('/');
+                }
+            })
+            .catch(() => router.push('/'));
+        }
     }, [router])
-        
+    
+    useEffect(() => {
+        if(loading) return;
+        const fetchData = async () => {
+            try {
+                if (user?.user?.role === 'admin') {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch("http://localhost:5000/admin/users", {
+                        method: "GET",
+                        headers: {
+                            "Authorization": "Bearer " + token,
+                        }
+                    });
+
+                    if(!res.ok){
+                        throw new Error("Erro na requisicao");
+                    }
+
+                    const data = await res.json();
+                    setUsuarios(data)
+                }
+            } catch (error) {
+                console.error("Erro ao buscar usuarios", error)
+            }
+        }
+
+        if(user?.user){
+            fetchData();
+        }
+
+    }, [user, loading])
+    
         const handleDelete = async (id) => {
             const token = localStorage.getItem('token')
 
@@ -63,7 +99,11 @@ const Profile = () => {
                 return;
             }
 
-            const response = await fetch(`http://localhost:5000/perfil`, {
+            const isAdmin = user?.user?.role === 'admin';
+
+            const url = isAdmin ? `http://localhost:5000/admin/users/${id}` : `http://localhost:5000/perfil`
+
+            const response = await fetch(url, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -73,9 +113,14 @@ const Profile = () => {
     
             if(response.ok){
                 alert("Conta deletada com sucesso");
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
-                router.push("/");
+
+                if(isAdmin){
+                    setUsuarios(prevUsuarios => prevUsuarios.filter(user => user.id !== id));
+                }else{
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("user");
+                    router.push("/");
+                }
             }else{
                 const data = await response.json()
                 console.error("erro ao deletar a conta", data)
@@ -83,7 +128,6 @@ const Profile = () => {
             }
         }
 
-        console.log(user)
 
         const handleLogout = () => {
             localStorage.removeItem('token');
@@ -117,6 +161,10 @@ const Profile = () => {
             }
         }
         
+        if(!user) {
+           return <p>Carregando...</p>
+        }
+
     return(
         <>
            <div className="w-full h-screen bg-[#676177] flex flex-col items-center p-6">
@@ -174,7 +222,7 @@ const Profile = () => {
                                             ) : (
                                                 <div>
                                                     <h1 className="text-lg font-semibold">{user.user.nome}</h1>
-                                                    <p className="text-sm text-gray-500">Funcao</p>
+                                                    <p className="text-sm text-gray-500">{user.user.role}</p>
                                                 </div>
                                             )}
                                         </>
@@ -299,6 +347,41 @@ const Profile = () => {
                                 </div>
                             </div>
                         </div>
+                        
+                        {user?.user?.role === 'admin' && (
+                            <div className="border rounded-md w-full p-4 mt-4 max-h-96 overflow-y-auto">
+                                <h1 className="text-xl font-semibold mb-4">Usuarios</h1>
+
+                            
+                                    <div className="space-y-4 max-h-96">
+                                        {usuarios.map((usuario) => (
+                                            <div 
+                                            key={usuario.idusers}
+                                            className="flex items-center justify-between p-4 border-b last:border-b-0 rounded-md shadow-md bg-gray-100 "
+                                            >
+                                                <div className="grid grid-cols-2 gap-4 w-full">
+                                                    <div className="w-40">
+                                                        <h1 className="font-semibold">Nome</h1>
+                                                        <p>{usuario.nome}</p>
+                                                    </div>
+
+                                                    <div className="w-40">
+                                                        <h1 className="font-semibold">Email</h1>
+                                                        <p>{usuario.email}</p>
+                                                    </div>
+                                                </div>
+
+                                                <button 
+                                                className="text-red-600 font-medium hover:text-red-800 transition duration-200"
+                                                onClick={() => handleDelete(usuario.idusers)}
+                                                >
+                                                    Excluir
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                            </div>
+                        )}
                     </div>
                 </div>
            </div>

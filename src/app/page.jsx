@@ -13,6 +13,7 @@ export default function Home() {
   const [email, setEmail] = useState("")
   const [celular, setCelular] = useState("")
   const [senha, setSenha] = useState("")
+  const [aceitouTermos, setAceitouTermos] = useState(false)
   const [erro, setErro] = useState("")
   const [sucesso, setSucesso] = useState("")
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function Home() {
 
     const url = isLogin ? "http://localhost:5000/login" : "http://localhost:5000/users";
 
-    const userData = isLogin ? {email, senha} : {nome, sobrenome, celular, email, senha};
+    const userData = isLogin ? {email, senha} : {nome, sobrenome, celular, email, senha, aceitouTermos: aceitouTermos};
 
     try {
       const response = await fetch(url, {
@@ -134,7 +135,7 @@ export default function Home() {
                     {/* termos e condicoes */}
                     {!isLogin && (
                       <label htmlFor="" className="flex items-center space-x-2">
-                        <input type="checkbox"/>
+                        <input type="checkbox" onClick={() => setAceitouTermos(!aceitouTermos)} checked={aceitouTermos}/>
                         <span className="text-gray-300 text-sm font-poppins">
                           Eu aceito com os <Link href="/">Termos e Condições</Link>
                         </span>

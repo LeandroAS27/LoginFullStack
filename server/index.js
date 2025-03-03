@@ -3,6 +3,7 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { conexao } from './server.js';
+import checkRole from './middleware/checkRole.js';
 
 const app = express();
 app.use(cors())
@@ -16,18 +17,23 @@ app.get('/', (req, res) => {
 
 //criar usuario com hash na senha
 app.post('/users', async (req, res) => {
-    const {nome, sobrenome, celular, email, senha} = req.body
+    const {nome, sobrenome, celular, email, senha, aceitouTermos} = req.body;
+
+    if(!aceitouTermos){
+        return res.status(400).json({message: "Voce precisa aceitar os termos e condicoes"})
+    }
 
     //gerar hash da senha
     const salt = await bcrypt.genSalt(10);
     const hashedPass = await bcrypt.hash(senha, salt);
     
-    const sql = "INSERT INTO users (nome, sobrenome, celular, email, senha) VALUES (?, ?, ?, ?, ?);"
-    const values = [nome, sobrenome, celular, email, hashedPass];
+    const sql = "INSERT INTO users (nome, sobrenome, celular, email, senha, aceitouTermos) VALUES (?, ?, ?, ?, ?, ?);"
+    const values = [nome, sobrenome, celular, email, hashedPass, aceitouTermos];
 
     conexao.query(sql, values, (error, result) => {
         if(error){
             console.log("Erro ao cadastrar o usuario", error)
+            return res.status(500).json({message: "Erro ao cadastrar o usuario"});
         }else{
             const row = JSON.parse(JSON.stringify(result))
             res.status(200).json({message: "Cadastro feito com sucesso"})
@@ -74,6 +80,9 @@ app.post("/login", (req, res) => {
         }
 
         const user = result[0];
+
+        
+
         console.log(user)
         //comparar senha digitada com a senha do banco
         const isMatch = await bcrypt.compare(senha, user.senha);
@@ -82,7 +91,7 @@ app.post("/login", (req, res) => {
         }
 
         //gerar token jwt
-        const token = jwt.sign({ id: user.idusers, email: user.email }, process.env.JWT_SECRET, {expiresIn: "1h"});
+        const token = jwt.sign({ id: user.idusers, email: user.email, role: user.role }, process.env.JWT_SECRET, {expiresIn: "1h"});
 
         res.status(200).json({message: "Login bem-sucedido", token, user: {
             id: user.idusers,
@@ -90,6 +99,7 @@ app.post("/login", (req, res) => {
             sobrenome: user.sobrenome,
             celular: user.celular,
             email: user.email,
+            role: user.role
         }});
     });
 });
@@ -161,5 +171,31 @@ app.patch('/perfil', verifyToken, (req, res) => {
     })
 })
 
+//Rota para admin visualizar todos os usuarios
+app.get('/admin/users', verifyToken, checkRole('admin'), (req, res) => {
+    console.log("Usuario autenticado", req.user)
+    const sql = "SELECT idusers, nome, sobrenome, email, celular, role FROM users";
+    conexao.query(sql, (error, results) => {
+        if(error){
+            console.error("Erro ao buscar usuarios", error);
+            return res.status(500).json({message: "Erro no servidor"})
+        }
+        res.status(200).json(results)
+    })
+})
+
+
+//admin delete por id
+app.delete('/admin/users/:id', verifyToken, checkRole('admin'), (req, res) => {
+    const userId = req.params.id
+    const sql = "DELETE FROM users WHERE idusers = ?"
+
+    conexao.query(sql, [userId], (error, result) => {
+        if(error){
+           return res.status(500).json({message: "Erro no servidor"})
+        }
+        res.status(200).json({message: "Sucesso ao deletar o usuario"})
+    })
+})
 
 export default app;
