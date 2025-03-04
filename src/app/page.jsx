@@ -21,7 +21,7 @@ export default function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    const url = isLogin ? `${process.env.REACT_APP_BACKEND_URL}/login` : `${process.env.REACT_APP_BACKEND_URL}/users`;
+    const url = isLogin ? "http://localhost:5000/login" : "http://localhost:5000/users";
 
     const userData = isLogin ? {email, senha} : {nome, sobrenome, celular, email, senha, aceitouTermos: aceitouTermos};
 
