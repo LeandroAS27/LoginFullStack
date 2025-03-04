@@ -115,7 +115,6 @@ const verifyToken = (req, res, next) => {
         if(err){
             return res.status(401).json({message: "Token invalido"});
         }
-        console.log("Decoded token:", decoded)
 
         req.user = decoded;
         next();
@@ -156,7 +155,6 @@ app.patch('/perfil', verifyToken, (req, res) => {
     const userId = req.user.id;
     const {nome, sobrenome, email, celular} = req.body
 
-    console.log(req.body)
 
     const sql = "UPDATE `users` SET `nome` = ?, `sobrenome` = ?, `email` = ?, `celular` = ? WHERE `idusers` = ?;";
 
@@ -173,7 +171,6 @@ app.patch('/perfil', verifyToken, (req, res) => {
 
 //Rota para admin visualizar todos os usuarios
 app.get('/admin/users', verifyToken, checkRole('admin'), (req, res) => {
-    console.log("Usuario autenticado", req.user)
     const sql = "SELECT idusers, nome, sobrenome, email, celular, role FROM users";
     conexao.query(sql, (error, results) => {
         if(error){

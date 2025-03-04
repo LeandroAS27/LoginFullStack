@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 const Profile = () => {
     const [user, setUser] = useState(null);
     const [usuarios, setUsuarios] = useState([]);
-    const router = useRouter();
     const [newNome, setNewNome] = useState('')
     const [newSobrenome, setNewSobrenome] = useState('')
     const [newCelular, setNewCelular] = useState('')
@@ -14,6 +13,7 @@ const Profile = () => {
     const [newSenha, setNewSenha] = useState('')
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     const newData = {
         nome: newNome || user?.user?.nome,
