@@ -20,8 +20,8 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
-    const url = isLogin ? "http://localhost:5000/login" : "http://localhost:5000/users";
+    
+    const url = isLogin ? `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/login` : `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/users`;
 
     const userData = isLogin ? {email, senha} : {nome, sobrenome, celular, email, senha, aceitouTermos: aceitouTermos};
 
@@ -137,7 +137,7 @@ export default function Home() {
                       <label htmlFor="" className="flex items-center space-x-2">
                         <input type="checkbox" onClick={() => setAceitouTermos(!aceitouTermos)} checked={aceitouTermos}/>
                         <span className="text-gray-300 text-sm font-poppins">
-                          Eu aceito com os <Link href="/">Termos e Condições</Link>
+                          Eu aceito os <strong>Termos</strong> e <strong>Condições</strong>
                         </span>
                       </label>
                     )}
