@@ -21,7 +21,7 @@ export default function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    const url = isLogin ? `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/login` : `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/users`;
+    const url = isLogin ? `${process.env.REACT_APP_BACKEND_URL}/login` : `${process.env.REACT_APP_BACKEND_URL}/users`;
 
     const userData = isLogin ? {email, senha} : {nome, sobrenome, celular, email, senha, aceitouTermos: aceitouTermos};
 
